@@ -11,8 +11,8 @@ from tenacity import (
     retry_if_exception_type,
 )
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
-from core.major_mapping import map_majors_to_disciplines
+from backend.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
+from backend.core.major_mapping import map_majors_to_disciplines
 
 log = logging.getLogger(__name__)
 

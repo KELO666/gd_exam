@@ -15,9 +15,9 @@ import shutil
 # 将 backend 目录加入 Python 路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from config import DB_PATH
-from models import get_connection
-from core.major_mapping import map_majors_to_disciplines
+from backend.config import DB_PATH
+from backend.models import get_connection
+from backend.core.major_mapping import map_majors_to_disciplines
 
 
 def backup_database():

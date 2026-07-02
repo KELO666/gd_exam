@@ -9,13 +9,13 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-from config import (
+from backend.config import (
     SOURCES, CATEGORY_KEYWORDS, GUANGDONG_KEYWORDS,
     SCRAPE_DELAY_MIN, SCRAPE_DELAY_MAX,
     REQUEST_TIMEOUT, USER_AGENT,
 )
-from models import insert_notice, init_db, get_connection, query_notice_by_url
-from llm_processor import extract_info
+from backend.models import insert_notice, init_db, get_connection, query_notice_by_url
+from backend.llm_processor import extract_info
 
 logging.basicConfig(
     level=logging.INFO,

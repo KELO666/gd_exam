@@ -1030,3 +1030,31 @@ curl -H "Authorization: Bearer dev_secret" http://localhost:8000/api/cron/scrape
 ### scheduler.py 状态
 
 保持独立可用，标记为 Deprecated（本地开发/传统部署仍可使用）。
+
+---
+
+## 2025-07-02 云端排雷：绝对引用重构
+
+**`[云端排雷]`** 修复了 Vercel 部署时因隐式相对导入导致的 `ModuleNotFoundError` 致命崩溃。已将全量代码重构为基于项目根目录的绝对引用（`backend.xxx`），打通了展示层的最后一道关卡。
+
+### 修复文件（18 处导入）
+
+| 文件 | 修复内容 |
+|------|----------|
+| `backend/main.py` | `from models` → `from backend.models` 等 3 处 |
+| `backend/models.py` | `from config` → `from backend.config` 1 处 |
+| `backend/scraper.py` | `from config/models/llm_processor` → `from backend.xxx` 3 处 |
+| `backend/llm_processor.py` | `from config/core.major_mapping` → `from backend.xxx` 2 处 |
+| `backend/scheduler.py` | `from scraper/models/notifier` → `from backend.xxx` 3 处 |
+| `backend/scripts/*.py` | `from config/models/core` → `from backend.xxx` 各 3 处 |
+
+### 验证
+
+```bash
+cd 项目根目录  # 不要 cd 进 backend
+python3 -c "from backend.main import app; print('OK')"
+# → Import OK
+
+python3 -c "from backend.main import app; from fastapi.testclient import TestClient; r = TestClient(app).get('/api/notices'); print(r.status_code, r.json()['total'])"
+# → 200 17
+```

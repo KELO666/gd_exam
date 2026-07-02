@@ -4,9 +4,9 @@ from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from scraper import run_scrape
-from models import init_db, query_notices
-from notifier import send_daily_digest
+from backend.scraper import run_scrape
+from backend.models import init_db, query_notices
+from backend.notifier import send_daily_digest
 
 log = logging.getLogger(__name__)
 

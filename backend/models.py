@@ -1,7 +1,7 @@
 import os
 import json
 import sqlite3
-from config import DB_DIR, DB_PATH, DATABASE_URL, DATABASE_AUTH_TOKEN
+from backend.config import DB_DIR, DB_PATH, DATABASE_URL, DATABASE_AUTH_TOKEN
 
 
 def get_connection():

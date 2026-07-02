@@ -9,9 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from models import init_db, query_notices, get_connection, _from_json_list
-from core.major_mapping import map_majors_to_disciplines
-from scheduler import scrape_and_notify
+from backend.models import init_db, query_notices, get_connection, _from_json_list
+from backend.core.major_mapping import map_majors_to_disciplines
+from backend.scheduler import scrape_and_notify
 
 logging.basicConfig(
     level=logging.INFO,
