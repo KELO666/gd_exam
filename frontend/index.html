@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>广东考编情报站</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a5f' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [v-cloak] { display: none; }
+    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05); }
+    .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; line-height: 1.5; white-space: nowrap; }
+    .toggle-checkbox:checked { right: 0; border-color: #2563eb; }
+    .toggle-checkbox:checked + .toggle-label { background-color: #2563eb; }
+    .toggle-checkbox { transition: all 0.3s ease; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" v-cloak>
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 shadow-lg sticky top-0 z-20">
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-lg sm:text-xl font-bold text-white tracking-tight">广东考编情报站</h1>
+              <p class="text-xs text-blue-200 mt-0.5 hidden sm:block">公务员 / 事业编 / 编外人员 · 招聘公告实时聚合</p>
+            </div>
+          </div>
+          <div class="text-right hidden md:block">
+            <p class="text-xs text-blue-200">数据源：sydw1 / qgsydw</p>
+            <p class="text-xs text-blue-300">自动更新 · 每日 09:00</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div class="lg:flex lg:gap-6">
+        <!-- Left: Filter Sidebar -->
+        <aside class="lg:w-72 shrink-0 mb-5 lg:mb-0">
+          <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4 lg:sticky lg:top-24">
+            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">筛选条件</h2>
+
+            <!-- 分类 Tabs -->
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              <button
+                v-for="tab in tabs" :key="tab.value"
+                @click="activeTab = tab.value"
+                class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-all"
+                :class="activeTab === tab.value
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
+              >
+                {{ tab.label }}
+                <span v-if="tab.value" class="ml-0.5 text-xs opacity-80">{{ getCategoryCount(tab.value) }}</span>
+              </button>
+            </div>
+
+            <!-- 三不限 Toggle -->
+            <div class="flex items-center justify-between mb-4 p-2 bg-gray-50 rounded-lg">
+              <span class="text-sm font-medium text-gray-700">仅看三不限岗位</span>
+              <div class="relative inline-block w-10 align-middle select-none">
+                <input type="checkbox" id="unlimited-toggle" v-model="showUnlimitedOnly"
+                  class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer top-0 left-0 z-10"
+                  :class="showUnlimitedOnly ? 'border-brand-600' : ''" />
+                <label for="unlimited-toggle"
+                  class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"
+                  :class="showUnlimitedOnly ? 'bg-brand-600' : ''"></label>
+              </div>
+            </div>
+
+            <!-- 专业下拉框（optgroup 树状分组） -->
+            <div class="mb-4">
+              <label class="text-xs font-medium text-gray-500 mb-1 block">报考专业</label>
+              <div class="relative">
+                <select
+                  v-model="selectedMajorName"
+                  class="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent focus:bg-white appearance-none transition-colors"
+                >
+                  <option value="">全部专业</option>
+                  <optgroup v-for="(majors, discipline) in majorTree" :key="discipline" :label="discipline">
+                    <option v-for="m in majors" :key="m" :value="m">{{ m }}</option>
+                  </optgroup>
+                </select>
+                <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- 一键重置 -->
+            <button
+              v-if="hasActiveFilter"
+              @click="resetFilters"
+              class="w-full mb-4 px-3 py-1.5 text-xs font-medium text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors"
+            >重置所有筛选</button>
+
+            <!-- Stats -->
+            <div class="border-t border-gray-100 pt-3">
+              <div class="text-xs text-gray-400 space-y-1">
+                <div class="flex justify-between"><span>总公告</span><span class="font-medium text-gray-600">{{ notices.length }}</span></div>
+                <div class="flex justify-between"><span>当前筛选</span><span class="font-medium text-gray-600">{{ filteredNotices.length }}</span></div>
+                <div class="flex justify-between"><span>三不限岗位</span><span class="font-medium text-amber-600">{{ unlimitedCount }}</span></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right: Content Area -->
+        <div class="flex-1 min-w-0">
+          <!-- Loading -->
+          <div v-if="loading" class="flex flex-col items-center justify-center py-24">
+            <div class="relative w-12 h-12 mb-4">
+              <div class="absolute inset-0 rounded-full border-4 border-brand-100"></div>
+              <div class="absolute inset-0 rounded-full border-4 border-brand-600 border-t-transparent spinner"></div>
+            </div>
+            <p class="text-sm text-gray-400">正在获取最新公告...</p>
+          </div>
+
+          <!-- Error -->
+          <div v-else-if="error" class="bg-white rounded-xl shadow-md border border-red-100 p-8 text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+              <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            </div>
+            <p class="text-gray-600 text-sm mb-3">{{ error }}</p>
+            <button @click="fetchData" class="px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors shadow-sm">
+              重新加载
+            </button>
+          </div>
+
+          <!-- Empty -->
+          <div v-else-if="filteredNotices.length === 0" class="bg-white rounded-xl shadow-md border border-gray-100 p-12 text-center">
+            <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-gray-50 flex items-center justify-center">
+              <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="text-gray-600 font-medium mb-1">暂无符合条件的公告</p>
+            <p class="text-sm text-gray-400 mb-4">试试调整筛选条件吧~</p>
+            <button @click="resetFilters" class="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors">
+              一键重置筛选
+            </button>
+          </div>
+
+          <!-- Notice Grid -->
+          <div v-else>
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-gray-400">共 <span class="font-medium text-gray-600">{{ filteredNotices.length }}</span> 条结果</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <a
+                v-for="notice in paginatedNotices" :key="notice.id"
+                :href="notice.url" target="_blank" rel="noopener"
+                class="block bg-white rounded-xl border border-gray-100 p-4 card-hover"
+              >
+                <!-- Top Row: Category + Unlimited Badge -->
+                <div class="flex items-center justify-between mb-2">
+                  <span class="pill" :class="categoryPillStyle(notice.category)">{{ notice.category }}</span>
+                  <span v-if="notice.is_unlimited" class="pill bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                    三不限
+                  </span>
+                </div>
+                <!-- Title -->
+                <h3 class="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 mb-2 min-h-[2.5rem]">
+                  {{ notice.title }}
+                </h3>
+                <!-- Discipline Tags -->
+                <div v-if="notice.disciplines && notice.disciplines.length" class="flex flex-wrap gap-1 mb-2">
+                  <span v-for="d in notice.disciplines" :key="d" class="pill bg-indigo-50 text-indigo-600 border border-indigo-100">
+                    {{ d }}
+                  </span>
+                </div>
+                <!-- Major Names -->
+                <div v-if="notice.major_names && notice.major_names.length" class="flex flex-wrap gap-1 mb-2">
+                  <span v-for="m in notice.major_names.slice(0, 3)" :key="m" class="pill bg-purple-50 text-purple-600 border border-purple-100">
+                    {{ m }}
+                  </span>
+                  <span v-if="notice.major_names.length > 3" class="pill bg-gray-50 text-gray-400 border border-gray-100">
+                    +{{ notice.major_names.length - 3 }}
+                  </span>
+                </div>
+                <!-- Meta Row -->
+                <div class="flex items-center gap-1.5 flex-wrap text-xs text-gray-400">
+                  <span class="pill bg-gray-50 text-gray-500 border border-gray-100">
+                    {{ notice.source }}
+                  </span>
+                  <span class="pill bg-gray-50 text-gray-500 border border-gray-100">
+                    {{ notice.publish_date || '未知' }}
+                  </span>
+                  <span class="pill" :class="deadlineStyle(notice.deadline)">
+                    <template v-if="notice.deadline">
+                      {{ notice.deadline }}
+                      <span v-if="isUrgent(notice.deadline)" class="ml-0.5 font-bold">!</span>
+                    </template>
+                    <template v-else>详见公告</template>
+                  </span>
+                </div>
+              </a>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 pt-6 pb-2">
+              <button
+                @click="page = Math.max(1, page - 1)"
+                :disabled="page === 1"
+                class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              >上一页</button>
+              <span class="text-sm text-gray-500 px-2">{{ page }} / {{ totalPages }}</span>
+              <button
+                @click="page = Math.min(totalPages, page + 1)"
+                :disabled="page === totalPages"
+                class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              >下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+      <p class="text-xs text-gray-400">广东考编情报站 · 数据来源于公开招聘信息 · 仅供参考</p>
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const tabs = [
+          { label: '全部', value: '' },
+          { label: '公务员', value: '公务员' },
+          { label: '事业编', value: '事业编' },
+          { label: '编外人员', value: '编外人员' },
+          { label: '未分类', value: '未分类' },
+        ];
+
+        // 筛选状态
+        const activeTab = ref('');
+        const showUnlimitedOnly = ref(false);
+        const selectedMajorName = ref('');
+
+        // 数据
+        const notices = ref([]);
+        const majorTree = ref({});
+        const loading = ref(true);
+        const error = ref('');
+        const page = ref(1);
+        const pageSize = 24;
+
+        // 计算属性
+        const hasActiveFilter = computed(() => {
+          return activeTab.value || showUnlimitedOnly.value || selectedMajorName.value;
+        });
+
+        const unlimitedCount = computed(() => {
+          return notices.value.filter(n => n.is_unlimited).length;
+        });
+
+        const filteredNotices = computed(() => {
+          let list = notices.value;
+
+          if (activeTab.value) {
+            list = list.filter(n => n.category === activeTab.value);
+          }
+
+          if (showUnlimitedOnly.value) {
+            list = list.filter(n => n.is_unlimited);
+          }
+
+          if (selectedMajorName.value) {
+            list = list.filter(n =>
+              n.major_names && n.major_names.includes(selectedMajorName.value)
+            );
+          }
+
+          return list;
+        });
+
+        const totalPages = computed(() => Math.ceil(filteredNotices.value.length / pageSize));
+
+        const paginatedNotices = computed(() => {
+          const start = (page.value - 1) * pageSize;
+          return filteredNotices.value.slice(start, start + pageSize);
+        });
+
+        function getCategoryCount(category) {
+          return notices.value.filter(n => n.category === category).length;
+        }
+
+        function categoryPillStyle(cat) {
+          const map = {
+            '公务员': 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+            '事业编': 'bg-blue-50 text-blue-700 border border-blue-100',
+            '编外人员': 'bg-orange-50 text-orange-700 border border-orange-100',
+            '未分类': 'bg-gray-50 text-gray-500 border border-gray-100',
+          };
+          return map[cat] || 'bg-gray-50 text-gray-500 border border-gray-100';
+        }
+
+        function deadlineStyle(deadline) {
+          if (!deadline) return 'bg-gray-50 text-gray-400 border border-gray-100';
+          if (isUrgent(deadline)) return 'bg-red-50 text-red-600 border border-red-200 font-semibold';
+          return 'bg-gray-50 text-gray-500 border border-gray-100';
+        }
+
+        function isUrgent(deadline) {
+          if (!deadline) return false;
+          const now = new Date();
+          const dl = new Date(deadline + 'T23:59:59');
+          const diff = (dl - now) / (1000 * 60 * 60 * 24);
+          return diff >= 0 && diff <= 3;
+        }
+
+        function resetFilters() {
+          activeTab.value = '';
+          showUnlimitedOnly.value = false;
+          selectedMajorName.value = '';
+        }
+
+        watch([activeTab, showUnlimitedOnly, selectedMajorName], () => { page.value = 1; });
+
+        async function fetchFilters() {
+          try {
+            const resp = await fetch('/api/filters');
+            if (resp.ok) {
+              const json = await resp.json();
+              majorTree.value = json.major_tree || {};
+            }
+          } catch (e) { /* silent */ }
+        }
+
+        async function fetchData() {
+          loading.value = true;
+          error.value = '';
+          try {
+            const resp = await fetch('/api/notices');
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const json = await resp.json();
+            notices.value = json.data || [];
+          } catch (e) {
+            error.value = '加载失败，请检查后端服务是否启动';
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        onMounted(() => {
+          fetchData();
+          fetchFilters();
+        });
+
+        return {
+          tabs, activeTab, showUnlimitedOnly, selectedMajorName,
+          notices, majorTree,
+          loading, error, page, totalPages, filteredNotices, paginatedNotices,
+          hasActiveFilter, unlimitedCount,
+          getCategoryCount, categoryPillStyle, deadlineStyle, isUrgent,
+          resetFilters, fetchData,
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
