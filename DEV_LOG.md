@@ -1127,3 +1127,19 @@ GET /api/notices?category=事业编 → 200, 8 条
 curl_cffi import OK
 httpbin.org GET → 200 ✅
 ```
+
+---
+
+## 2025-07-03 本地自动化：auto_run.sh 脚本
+
+**`[本地自动化]`** 创建了 `auto_run.sh` 本地隐形启动脚本，并实现了 `.env` 环境变量的自动挂载。配合 macOS 的 crontab 定时任务，成功利用本地真实 IP 绕过目标网站 WAF，实现云端数据库的自动化注入。
+
+### 文件
+
+`auto_run.sh`：自动 source `.env` → 切换目录 → 执行爬虫 → 日志追加到 `/tmp/gd_scraper.log`
+
+### crontab 挂载命令
+
+```bash
+(crontab -l 2>/dev/null; echo "0 12 * * * /Users/jc/Documents/AI_Coding/考公资讯助手/auto_run.sh") | crontab -
+```
