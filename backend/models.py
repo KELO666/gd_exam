@@ -150,7 +150,7 @@ def query_notices(category=None, major_category=None, skip_expired=False,
         sql += " AND (deadline IS NULL OR deadline = '' OR deadline >= date('now', 'localtime'))"
     sql += " AND is_unlimited = 0"
     sql += " ORDER BY publish_date DESC, id DESC"
-    rows = conn.execute(sql, params).fetchall()
+    rows = conn.execute(sql, tuple(params)).fetchall()
     conn.close()
 
     results = []

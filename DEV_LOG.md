@@ -1087,3 +1087,23 @@ Vercel/Lambda 运行时 `tempfile.gettempdir()` 自动解析为可写的 `/tmp` 
 - `fetch('/api/notices')`
 
 无需修改。
+
+---
+
+## 2025-07-03 云端排雷：LibSQL List→Tuple 类型修复
+
+**`[云端排雷]`** 修复了 LibSQL 驱动不支持 List 类型参数引发的 `TypeError: 'list' object cannot be converted to 'PyTuple'`。已对全局 SQL 执行语句的参数传入增加 `tuple()` 强转，确保本地宽容模式与云端严格模式的 100% 兼容。
+
+### 修复位置
+
+| 文件 | 行 | 修改 |
+|------|-----|------|
+| `backend/models.py` | L153 | `conn.execute(sql, params)` → `conn.execute(sql, tuple(params))` |
+| `backend/scraper.py` | L272 | `conn.execute(..., delete_ids)` → `conn.execute(..., tuple(delete_ids))` |
+
+### 测试
+
+```
+GET /api/notices → 200, 17 条
+GET /api/notices?category=事业编 → 200, 8 条
+```

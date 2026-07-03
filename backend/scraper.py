@@ -269,7 +269,7 @@ def clean_dirty_data():
         placeholders = ",".join("?" * len(delete_ids))
         conn.execute(
             f"DELETE FROM exam_notices WHERE id IN ({placeholders})",
-            delete_ids,
+            tuple(delete_ids),
         )
         conn.commit()
         log.info("清理 qgsydw 脏数据 %d 条（保留 %d 条广东数据）",
