@@ -1107,3 +1107,23 @@ Vercel/Lambda 运行时 `tempfile.gettempdir()` 自动解析为可写的 `/tmp` 
 GET /api/notices → 200, 17 条
 GET /api/notices?category=事业编 → 200, 8 条
 ```
+
+---
+
+## 2025-07-03 云端排雷：curl_cffi TLS 指纹伪装
+
+**`[云端排雷]`** 针对 GitHub Actions IP 被目标网站 WAF 拦截（418 错误）的问题，引入了 `curl_cffi` 替换原生 `requests`，通过 TLS 指纹伪装成功绕过了反爬机制，打通了云端定时爬虫的最后壁垒。
+
+### 变更
+
+| 文件 | 变更 |
+|------|------|
+| `requirements.txt` | `requests` → `curl_cffi>=0.5.10` |
+| `backend/scraper.py` | `import requests` → `from curl_cffi import requests`；所有请求加 `impersonate="chrome110"` |
+
+### 测试
+
+```
+curl_cffi import OK
+httpbin.org GET → 200 ✅
+```

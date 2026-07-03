@@ -7,7 +7,7 @@ import tempfile
 from datetime import datetime
 from urllib.parse import urljoin
 
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 from backend.config import (
@@ -130,7 +130,7 @@ def _download_file(url, filename):
     """下载文件到临时目录，返回文件路径"""
     filepath = os.path.join(TEMP_DIR, filename)
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT, impersonate="chrome110")
         resp.raise_for_status()
         with open(filepath, "wb") as f:
             f.write(resp.content)
@@ -194,7 +194,7 @@ def scrape_detail_page(url, title="", source_encoding="utf-8"):
         "is_unlimited": False, "disciplines": [], "major_names": [],
     }
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT, impersonate="chrome110")
         resp.encoding = source_encoding
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -306,7 +306,7 @@ def scrape_sydw1(source):
     url = source["url"]
     log.info("正在爬取: %s", url)
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT, impersonate="chrome110")
         resp.encoding = source["encoding"]
         resp.raise_for_status()
     except requests.RequestException as e:
@@ -343,7 +343,7 @@ def scrape_qgsydw(source):
     url = source["url"]
     log.info("正在爬取: %s", url)
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT, impersonate="chrome110")
         resp.encoding = "gb2312"
         resp.raise_for_status()
     except requests.RequestException as e:
