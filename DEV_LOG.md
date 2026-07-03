@@ -1058,3 +1058,17 @@ python3 -c "from backend.main import app; print('OK')"
 python3 -c "from backend.main import app; from fastapi.testclient import TestClient; r = TestClient(app).get('/api/notices'); print(r.status_code, r.json()['total'])"
 # → 200 17
 ```
+
+---
+
+## 2025-07-02 云端排雷：Errno 30 只读文件系统修复
+
+**`[云端排雷]`** 修复了 Vercel Serverless 环境下 `[Errno 30] Read-only file system` 的报错。已将爬虫下载附件的临时目录重构为调用 `tempfile.gettempdir()`，完美适配云端无状态只读沙盒。
+
+### 修复
+
+`backend/scraper.py`：
+- **旧**：`TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_downloads")`
+- **新**：`TEMP_DIR = os.path.join(tempfile.gettempdir(), "gd_exam_downloads")`
+
+Vercel/Lambda 运行时 `tempfile.gettempdir()` 自动解析为可写的 `/tmp` 目录。

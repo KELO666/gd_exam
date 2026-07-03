@@ -3,6 +3,7 @@ import re
 import time
 import random
 import logging
+import tempfile
 from datetime import datetime
 from urllib.parse import urljoin
 
@@ -25,8 +26,8 @@ log = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": USER_AGENT}
 
-# 附件下载临时目录
-TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_downloads")
+# 附件下载临时目录（使用系统标准 /tmp，兼容 Vercel Serverless）
+TEMP_DIR = os.path.join(tempfile.gettempdir(), "gd_exam_downloads")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 
