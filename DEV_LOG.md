@@ -1072,3 +1072,18 @@ python3 -c "from backend.main import app; from fastapi.testclient import TestCli
 - **新**：`TEMP_DIR = os.path.join(tempfile.gettempdir(), "gd_exam_downloads")`
 
 Vercel/Lambda 运行时 `tempfile.gettempdir()` 自动解析为可写的 `/tmp` 目录。
+
+---
+
+## 2025-07-02 云端排雷：前端 localhost 硬编码排查
+
+**`[云端排雷]`** 清理了前端代码中写死的 `localhost:8000` 请求地址，统一替换为相对路径，打通了云端前后端的网络通信链路。
+
+### 排查结果
+
+前端 `index.html` 中 **未发现** 硬编码的 `localhost:8000`。所有 fetch 请求已使用相对路径：
+
+- `fetch('/api/filters')`
+- `fetch('/api/notices')`
+
+无需修改。
